@@ -1,0 +1,21 @@
+<div class="panel panel-default" style="margin-top: 10px;">
+
+   <div class="panel-heading" >
+    <div class="row pad-left-right" >
+        <span class="pull-left title" style="font-size:16px ; font-weight:bold; margin-left: 5px;">Contacts</span>
+        <a class="btn btn-success pull-right" [routerLink]="'new'">
+           New Contact
+        </a>
+    </div>
+</div>
+<div class="row">
+    <div class="panel-body">
+        <div class="center-panel">
+    <div class="col-xs-12">
+    <app-contact-item *ngFor="let contactL of contacts "[contact]= "contactL" dnd-draggable [dragEnabled]="true" [dragData]="contactL" [dropZones]="['contactGroup']"></app-contact-item>
+       
+    </div>
+    </div>
+    </div>
+   </div>
+</div>

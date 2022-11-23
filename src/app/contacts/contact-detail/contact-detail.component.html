@@ -1,0 +1,34 @@
+   <div class="panel panel-default" style="margin-top:10px ;">
+    <div class="panel-heading">
+   <div class="row pad-left-right">
+            <p class="pull-left title" style="font-size:16px ;font-weight:bold;margin-left:5px;">{{contact.name}}</p>
+            <div class="pull-down" style="margin-top:40px ;margin-left:5px;">
+            <img [src]="contact.imageUrl" alt="contact.name"class="img-responsive " ></div>
+            <a (click)="onDelete()" class="btn btn-danger pull-right" style="margin-right:5px">Delete</a>
+            <a [routerLink]="['edit']" routerLinkActive="active" class="btn btn-primary pull-right"style ="margin-left:5px">Edit</a>
+    </div>
+    <hr style="color:white ; font-weight:bold;">
+    <div class="panel-body" style="background-color: white;">
+        <div class="center-panel">  
+            <p>Phone:{{contact.phone}}</p>
+            <p>Email:{{contact.email}}</p>
+            <hr>
+            <div class="row" *ngIf="contact.group">
+                <div class="col-xs-12">
+                  <strong>Group Contacts:</strong>
+                  <div class="row" style="min-height: 3rem">
+                    <div *ngFor="let groupContact of contact.group">
+                      <app-contact-item
+                        class="col-sm-11"
+                        [contact]="groupContact"
+                      ></app-contact-item>
+                    </div>
+                  </div>
+                </div>
+              </div>
+        </div>
+
+    </div>
+
+    </div>
+
