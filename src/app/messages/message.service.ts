@@ -1,17 +1,27 @@
 import { Message } from "./message.model";
 import { MOCKMESSAGES } from "./MOCKMESSAGES";
-import {EventEmitter} from '@angular/core';
+import {EventEmitter, Injectable} from '@angular/core';
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 
+@Injectable()
 export class MessageService{
     messages:Message[] = [];
     messageChangedEvent = new EventEmitter<Message[]>()
 
-    constructor(){
+    constructor(private http:HttpClient){
         this.messages = MOCKMESSAGES;
     }
 
-    getMessages(){
-        return this.messages.slice()
+    getMessages():void{
+        this.http.get('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/messages.json').subscribe((messages:Message[])=>{
+            this.messages = messages;
+            this.messageChangedEvent.emit(this.messages.slice());
+        },(err: any) => {
+            console.error(err);
+          }
+            
+        )
+        
     }
 
     getMessage(id:string){
@@ -25,6 +35,21 @@ export class MessageService{
 
     addMessage(message:Message){
         this.messages.push(message);
-        this.messageChangedEvent.emit(this.messages.slice());
+        this.storeMessages();
     }
+
+    storeMessages(): void {
+        let json = JSON.stringify(this.messages);
+        let header = new HttpHeaders();
+        header.set('Content-Type', 'application/json');
+        this
+        .http
+        .put('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/messages.json', json, {
+          headers: header
+        }).subscribe(() => {
+          this.messageChangedEvent.emit(this.messages.slice());
+        });
+      }
+
+  
 }

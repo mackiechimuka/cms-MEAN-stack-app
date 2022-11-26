@@ -1,22 +1,42 @@
 import { Document } from "./document-list/document.model";
 import { MOCKDOCUMENTS } from "./MOCKDOCUMENTS";
-import {EventEmitter} from "@angular/core";
+import {EventEmitter, Injectable, Injector} from "@angular/core";
 import {Subject} from 'rxjs'
+import { HttpClient, HttpHeaders } from "@angular/common/http";
 
+@Injectable()
 export class DocumentService{
     maxDocumentId:number
-    documents:Document[] ;
+    documents:Document[] =[] ;
     documentSelectedEvent = new EventEmitter<Document>();
-    //documentChangedEvent = new EventEmitter<Document[]>();
+    documentChangedEvent = new EventEmitter<Document[]>();
     documentListChangedEvent = new Subject<Document[]>();
 
-    constructor(){
+    constructor(private http:HttpClient){
         this.documents = MOCKDOCUMENTS;
         this.maxDocumentId = this.getMaxId()
     }
 
-    getDocuments():Document[]{
-        return this.documents.slice();
+    getDocuments():void{
+        this.http.get('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/documents.json').subscribe(
+            (documents:Document[])=>{
+                this.documents = documents;
+                this.maxDocumentId = this.getMaxId();
+                this.documents.sort((docA :Document,docB:Document):number=>{
+                    if(docA.id<docB.id){
+                        return -1;
+                    } else if (docA === docB){
+                        return 0;
+                    }else {
+                        return 1;
+                    }
+                });
+                this.documentListChangedEvent.next(this.documents.slice());
+
+            },(err: any) => {
+                console.error(err);
+              }
+        );
     }
 
     getDocument(id:string){
@@ -37,7 +57,7 @@ export class DocumentService{
            return;
         }
         this.documents.splice(pos, 1);
-        this.documentListChangedEvent.next(this.documents.slice());
+        this.storeDocuments();
      }
 
     getMaxId():number{
@@ -58,7 +78,7 @@ export class DocumentService{
         this.maxDocumentId++;
         newDocument.id =this.maxDocumentId.toString();
         this.documents.push(newDocument);
-        this.documentListChangedEvent.next(this.documents.slice());
+        this.storeDocuments();
 
     }
 
@@ -74,8 +94,21 @@ export class DocumentService{
 
         newDocument.id = originalDocument.id;
         this.documents[pos] = newDocument;
-        this.documentListChangedEvent.next(this.documents.slice())
+        this.storeDocuments();
     }
+
+    storeDocuments(): void {
+        let json = JSON.stringify(this.documents);
+        let header = new HttpHeaders();
+        header.set('Content-Type', 'application/json');
+        this
+        .http
+        .put('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/documents.json', json, {
+          headers: header
+        }).subscribe(() => {
+          this.documentListChangedEvent.next((this.documents.slice()));
+        });
+      }
 
   
 }

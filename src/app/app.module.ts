@@ -24,6 +24,7 @@ import { ContactEditComponent } from './contacts/contact-edit/contact-edit.compo
 import { ContactService } from './contacts/contact.service';
 import { MessageService } from './messages/message.service';
 import { DocumentService } from './documents/document.service';
+import { ContactsFilterPipe } from './contacts/contacts-filter.pipe';
 
 
 @NgModule({
@@ -44,6 +45,7 @@ import { DocumentService } from './documents/document.service';
     DropDownDirective,
     DocumentEditComponent,
     ContactEditComponent,
+    ContactsFilterPipe,
     
   ],
   imports: [
