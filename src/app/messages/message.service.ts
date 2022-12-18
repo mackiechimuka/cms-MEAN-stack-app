@@ -13,8 +13,8 @@ export class MessageService{
     }
 
     getMessages():void{
-        this.http.get('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/messages.json').subscribe((messages:Message[])=>{
-            this.messages = messages;
+        this.http.get<{message: string, messages: Message[]}>('http://localhost:3000/messages').subscribe((response:any)=>{
+            this.messages = response.messages;
             this.messageChangedEvent.emit(this.messages.slice());
         },(err: any) => {
             console.error(err);
@@ -34,8 +34,24 @@ export class MessageService{
     }
 
     addMessage(message:Message){
-        this.messages.push(message);
-        this.storeMessages();
+        if (!message) {
+            return;
+          }
+        
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+          });
+
+        message.id = '';
+        
+        this.http
+       .post<{message: string, newMessage: Message}>('http://localhost:3000/messages', message, {headers: headers})
+       .subscribe((response: any) => {
+       this.messages.push(response.newMessage);
+       this.messageChangedEvent.next(this.messages.slice());
+       this.getMessages();
+    } );
+        
     }
 
     storeMessages(): void {
@@ -44,7 +60,7 @@ export class MessageService{
         header.set('Content-Type', 'application/json');
         this
         .http
-        .put('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/messages.json', json, {
+        .put('http://localhost:3000/messages', json, {
           headers: header
         }).subscribe(() => {
           this.messageChangedEvent.emit(this.messages.slice());

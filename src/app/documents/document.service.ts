@@ -18,9 +18,9 @@ export class DocumentService{
     }
 
     getDocuments():void{
-        this.http.get('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/documents.json').subscribe(
-            (documents:Document[])=>{
-                this.documents = documents;
+        this.http.get<{message: string, documents: Document[]}>('http://localhost:3000/documents').subscribe(
+            (response)=>{
+                this.documents = response.documents;
                 this.maxDocumentId = this.getMaxId();
                 this.documents.sort((docA :Document,docB:Document):number=>{
                     if(docA.id<docB.id){
@@ -52,12 +52,15 @@ export class DocumentService{
         if (!document) {
            return;
         }
+
         const pos = this.documents.indexOf(document);
         if (pos < 0) {
            return;
         }
-        this.documents.splice(pos, 1);
-        this.storeDocuments();
+        this.http.delete<{message: String}>(`http://localhost:3000/documents/${document.id}`)
+        .subscribe((response: any) => {
+          this.getDocuments();
+        })
      }
 
     getMaxId():number{
@@ -75,11 +78,28 @@ export class DocumentService{
         if(!newDocument){
             return;
         }
-        this.maxDocumentId++;
-        newDocument.id =this.maxDocumentId.toString();
-        this.documents.push(newDocument);
-        this.storeDocuments();
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+          });
 
+        newDocument.id = '';
+
+        this.http
+        .post<{message: string, document: Document}>('http://localhost:3000/documents', newDocument, {headers: headers})
+        .subscribe((response: any) => {
+        this.documents.push(response.document);
+        this.documents.sort((docA :Document,docB:Document):number=>{
+            if(docA.id<docB.id){
+                return -1;
+            } else if (docA === docB){
+                return 0;
+            }else {
+                return 1;
+            }
+        });
+        this.documentChangedEvent.next(this.documents.slice());
+        this.getDocuments();
+    });
     }
 
     updateDocument(originalDocument:Document,newDocument:Document){
@@ -91,10 +111,19 @@ export class DocumentService{
         if (pos<0){
             return
         }
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+          });
+        
+        const stringfiedDocument = JSON.stringify(newDocument);
 
-        newDocument.id = originalDocument.id;
-        this.documents[pos] = newDocument;
-        this.storeDocuments();
+        this.http
+        .put<{message: string}>(`http://localhost:3000/documents/${originalDocument.id}`, stringfiedDocument, {headers: headers})
+        .subscribe((response: any) => {
+          this.getDocuments();
+        });
+
+        
     }
 
     storeDocuments(): void {
@@ -103,7 +132,7 @@ export class DocumentService{
         header.set('Content-Type', 'application/json');
         this
         .http
-        .put('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/documents.json', json, {
+        .put('http://localhost:3000/documents', json, {
           headers: header
         }).subscribe(() => {
           this.documentListChangedEvent.next((this.documents.slice()));

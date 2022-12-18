@@ -21,9 +21,9 @@ export class ContactService{
     }
 
     getContacts():void{
-        this.http.get('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/contacts.json').subscribe(
-            (contacts:Contact[])=>{
-                this.contacts = contacts;
+        this.http.get<{message: string, contacts: Contact[]}>('http://localhost:3000/contacts').subscribe(
+            (response)=>{
+                this.contacts = response.contacts;
                 this.maxContactId = this.getMaxId();
                 this.contacts.sort((contA:Contact,contB:Contact):number =>{
                     if(contA.name<contB.name){
@@ -58,8 +58,11 @@ export class ContactService{
         if(pos<0){
             return;
         }
-        this.contacts.splice(pos,1);
-        this.storeContacts();
+        this.http.delete(`http://localhost:3000/contacts/${contact.id}`)
+        .subscribe((contacts: Contact[]) => {
+          this.getContacts();
+        })
+      
     }
     getMaxId():number{
         let maxId = 0;
@@ -76,11 +79,26 @@ export class ContactService{
         if(!newContact){
             return
         }
-        this.maxContactId++;
-        newContact.id = this.maxContactId.toString();
-        this.contacts.push(newContact);
-        this.storeContacts();
-
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+          });
+      
+        newContact.id = '';
+        this.http
+       .post<{message: string, contact: Contact}>('http://localhost:3000/contacts', newContact, {headers: headers})
+       .subscribe((response: any) => {
+       this.contacts.push(response.contact);
+       this.contacts.sort((contA:Contact,contB:Contact):number =>{
+           if(contA.name<contB.name){
+            return -1;
+           } else if (contA.id ===contB.id){
+            return 0;
+          }else{
+            return 1;
+          }
+          });
+       this.contactListChangedEvent.next(this.contacts.slice());
+    });
     }
 
     updateContact(originalContact:Contact,newContact:Contact){
@@ -91,9 +109,18 @@ export class ContactService{
         if(pos<0){
             return
         }
-        newContact.id = originalContact.id;
-        this.contacts[pos] = newContact;
-        this.storeContacts();
+
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+          });
+
+        const stringfiedContact = JSON.stringify(newContact);
+
+        this.http
+        .put<{message: string}>(`http://localhost:3000/contacts/${originalContact.id}`, stringfiedContact, {headers: headers})
+        .subscribe((response: any) => {
+        this.getContacts();
+       });
     }
 
     storeContacts(): void {
@@ -102,7 +129,7 @@ export class ContactService{
         header.set('Content-Type', 'application/json');
         this
         .http
-        .put('https://angular-cms-7b3d3-default-rtdb.firebaseio.com/contacts.json', json, {
+        .put('http://localhost:3000/documents', json, {
           headers: header
         }).subscribe(() => {
           this.contactListChangedEvent.next((this.contacts.slice()));
